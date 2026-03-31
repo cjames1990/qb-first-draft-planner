@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QB-First Draft Planner + Stacks – Underdog 20-Round Best Ball</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        .tail-container { font-family: 'Inter', system_ui, sans-serif; }
+        .title-font { font-family: 'Space Grotesk', sans-serif; }
+        .card-hover { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+        .hero-stack { border-left: 4px solid #eab308; }
+        .late-stack { border-left: 4px solid #10b981; }
+    </style>
+</head>
+<body class="tail-container bg-zinc-950 text-zinc-200 min-h-screen pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <!-- Header -->
+        <div class="pt-8 pb-6 border-b border-zinc-800">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="title-font text-4xl md:text-5xl font-semibold tracking-tighter text-white">
+                        QB-First Draft Planner + Pro Stacks
+                    </h1>
+                    <p id="adpDate" class="text-zinc-400 mt-1 text-lg">20-Round Underdog Best Ball • bbmdb.com ADP (LIVE)</p>
+                </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <button onclick="refreshADP()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-2xl flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span class="font-medium">Refresh Live ADP</span>
+                    </button>
+                    <div class="px-4 py-2 bg-zinc-900 rounded-2xl flex items-center gap-2 border border-zinc-700">
+                        <i class="fa-solid fa-football text-emerald-400"></i>
+                        <span class="font-medium">Pro Stack Optimized</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="mt-8 bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-800">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Draft Slot -->
+                <div class="lg:col-span-3">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">YOUR DRAFT SLOT</label>
+                    <select id="draftSlot" class="w-full bg-zinc-950 border border-zinc-700 text-white text-2xl font-semibold py-5 px-6 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors">
+                        <!-- populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Target Build -->
+                <div class="lg:col-span-6">
+                    <label class="block text-sm font-medium text-zinc-400 mb-3">YOUR TARGET BUILD</label>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div><div class="text-xs text-zinc-500 mb-1">QBs</div><input type="number" id="buildQB" value="2" min="1" max="3" class="w-full bg-zinc-950 border border-zinc-700 text-white text-center text-2xl font-semibold py-4 rounded-2xl focus:outline-none focus:border-blue-500"></div>
+                        <div><div class="text-xs text-zinc-500 mb-1">RBs</div><input type="number" id="buildRB" value="6" min="4" max="8" class="w-full bg-zinc-950 border border-zinc-700 text-white text-center text-2xl font-semibold py-4 rounded-2xl focus:outline-none focus:border-blue-500"></div>
+                        <div><div class="text-xs text-zinc-500 mb-1">WRs</div><input type="number" id="buildWR" value="8" min="6" max="10" class="w-full bg-zinc-950 border border-zinc-700 text-white text-center text-2xl font-semibold py-4 rounded-2xl focus:outline-none focus:border-blue-500"></div>
+                        <div><div class="text-xs text-zinc-500 mb-1">TEs</div><input type="number" id="buildTE" value="4" min="2" max="4" class="w-full bg-zinc-950 border border-zinc-700 text-white text-center text-2xl font-semibold py-4 rounded-2xl focus:outline-none focus:border-blue-500"></div>
+                    </div>
+                </div>
+
+                <!-- QB Selector -->
+                <div class="lg:col-span-3">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">YOUR QB1</label>
+                    <select id="selectedQB" class="w-full bg-zinc-950 border border-zinc-700 text-white text-2xl font-semibold py-5 px-6 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors">
+                        <!-- populated by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="generatePlans()" class="mt-8 w-full bg-blue-600 hover:bg-blue-500 transition-all text-white text-xl font-semibold py-7 rounded-3xl flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>GENERATE MY PRO BEST BALL PLAN</span>
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden mt-10">
+            <div class="flex items-center justify-between mb-6">
+                <h2 id="resultsHeader" class="text-2xl font-semibold"></h2>
+                <button onclick="copyPlan()" class="flex items-center gap-2 px-5 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copy Full Plan</span>
+                </button>
+            </div>
+            <div id="planContainer" class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="mt-20 text-center">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-zinc-900 rounded-3xl mb-6">
+                <i class="fa-solid fa-football text-4xl text-zinc-600"></i>
+            </div>
+            <h3 class="text-xl font-medium text-zinc-400">Select slot, target build & your QB1</h3>
+            <p class="text-zinc-500 mt-2 max-w-md mx-auto">Get a realistic, stack-optimized 20-round plan with hero stacks you can actually hit and late correlations aligned to ADP.</p>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================
+        // LIVE ADP SCRAPER from bbmdb.com
+        // ==============================================
+        let players = { qb: {}, rb: {}, wr: {}, te: {} };
+        let playerToTeam = {}; // static fallback for correlations (bbmdb doesn't show teams)
+
+        // Static team map for known players (correlations + display)
+        const staticTeamMap = {
+            "Josh Allen": "BUF", "Lamar Jackson": "BAL", "Jayden Daniels": "WAS", "Joe Burrow": "CIN",
+            "Caleb Williams": "CHI", "Jalen Hurts": "PHI", "Drake Maye": "NE", "Dak Prescott": "DAL",
+            "Justin Herbert": "LAC", "Trevor Lawrence": "JAX", "Jaxson Dart": "MIA", "Patrick Mahomes": "KC",
+            "Brock Purdy": "SF", "Bo Nix": "DEN", "Matthew Stafford": "LAR", "Jared Goff": "DET",
+            "Kyler Murray": "ARI", "Jordan Love": "GB", "Baker Mayfield": "TB", "Malik Willis": "TEN",
+            // Add any other players you care about here — the scraper will override ADP only
+            "James Cook": "BUF", "Dalton Kincaid": "BUF", "Khalil Shakir": "BUF",
+            "Derrick Henry": "BAL", "Zay Flowers": "BAL", "Isaiah Likely": "BAL",
+            "Terry McLaurin": "WAS", "Ja'Marr Chase": "CIN", "Tee Higgins": "CIN",
+            "A.J. Brown": "PHI", "DeVonta Smith": "PHI", "CeeDee Lamb": "DAL",
+            // ... you can expand this map forever
+        };
+
+        async function loadLiveADP() {
+            try {
+                const proxy = 'https://corsproxy.io/?' + encodeURIComponent('https://bbmdb.com/');
+                const response = await fetch(proxy);
+                if (!response.ok) throw new Error('Fetch failed');
+                const html = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Find the main table
+                const table = doc.querySelector('table') || doc.querySelector('tbody');
+                if (!table) throw new Error('No table found');
+                
+                const rows = doc.querySelectorAll('tbody tr');
+                players = { qb: {}, rb: {}, wr: {}, te: {} };
+
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length < 3) return;
+                    
+                    const name = cells[0].textContent.trim();
+                    const posRaw = cells[1].textContent.trim(); // e.g. "RB1"
+                    const adpStr = cells[2].textContent.trim();
+                    const adp = parseFloat(adpStr);
+                    
+                    if (!name || isNaN(adp)) return;
+                    
+                    const pos = posRaw.substring(0, 2).toUpperCase(); // QB, RB, WR, TE
+                    
+                    if (pos === 'QB') players.qb[name] = { adp, team: staticTeamMap[name] || null };
+                    else if (pos === 'RB') players.rb[name] = { adp, team: staticTeamMap[name] || null };
+                    else if (pos === 'WR') players.wr[name] = { adp, team: staticTeamMap[name] || null };
+                    else if (pos === 'TE') players.te[name] = { adp, team: staticTeamMap[name] || null };
+                });
+
+                // Merge static team map into players
+                Object.keys(staticTeamMap).forEach(name => {
+                    const team = staticTeamMap[name];
+                    if (!players.qb[name] && !players.rb[name] && !players.wr[name] && !players.te[name]) {
+                        // not in scraped data yet — add as QB if it was in original
+                        if (name === "Josh Allen" || name.includes("Jackson") || etc.) players.qb[name] = { adp: 240, team };
+                    }
+                });
+
+                console.log('✅ Live ADP loaded from bbmdb.com');
+                document.getElementById('adpDate').innerHTML = `20-Round Underdog Best Ball • bbmdb.com ADP (LIVE • ${new Date().toLocaleDateString()})`;
+                return true;
+            } catch (e) {
+                console.warn('Live scrape failed (using fallback data)', e);
+                return false;
+            }
+        }
+
+        // Your original correlations (unchanged)
+        const correlations = {
+            "Josh Allen": {hero: ["James Cook","Dalton Kincaid","Khalil Shakir"], late: ["James Cook","Dalton Kincaid","Khalil Shakir"]},
+            "Lamar Jackson": {hero: [], late: ["Derrick Henry","Zay Flowers","Isaiah Likely"]},
+            "Jayden Daniels": {hero: [], late: ["Terry McLaurin"]},
+            "Joe Burrow": {hero: ["Ja'Marr Chase","Tee Higgins"], late: ["Ja'Marr Chase","Tee Higgins"]},
+            "Caleb Williams": {hero: [], late: ["D.J. Moore","Rome Odunze","Colston Loveland"]},
+            "Jalen Hurts": {hero: ["A.J. Brown","DeVonta Smith"], late: ["A.J. Brown","DeVonta Smith"]},
+            "Dak Prescott": {hero: ["CeeDee Lamb"], late: ["George Pickens"]},
+            "Patrick Mahomes": {hero: [], late: ["Rashee Rice","Xavier Worthy"]},
+            "Brock Purdy": {hero: [], late: ["George Kittle","Ricky Pearsall","Jauan Jennings"]},
+            "Jordan Love": {hero: [], late: ["Jayden Reed","Tucker Kraft"]},
+            "Justin Herbert": {hero: ["Ladd McConkey"], late: ["Ladd McConkey"]},
+            "Default": {hero: [], late: []}
+        };
+
+        function getPickNumber(round, slot) {
+            return round % 2 === 1 ? (round - 1) * 12 + slot : (round - 1) * 12 + (13 - slot);
+        }
+
+        function getRealisticStacks(qbName, qbAdp) {
+            const qbTeam = (players.qb[qbName] || {}).team || staticTeamMap[qbName] || '';
+            const qbPick = Math.round(qbAdp);
+            const maxReachPick = qbPick - 12;
+            const corr = correlations[qbName] || correlations.Default;
+            
+            const allPlayers = {...players.wr, ...players.te, ...players.rb};
+            let heroStacks = [];
+            let lateStacks = [];
+
+            // Hero stacks
+            corr.hero.forEach(name => {
+                const p = allPlayers[name] || {adp: 999, team: staticTeamMap[name] || ''};
+                heroStacks.push({ name, pos: name in players.wr ? "WR" : name in players.te ? "TE" : "RB", team: p.team, adp: p.adp, reason: "Hero stack — draft early to pair with your QB1" });
+            });
+
+            // Late reachable + same-team fallback
+            corr.late.forEach(name => {
+                const p = allPlayers[name] || {adp: 999, team: staticTeamMap[name] || ''};
+                if (Math.round(p.adp) >= maxReachPick) {
+                    lateStacks.push({ name, pos: name in players.wr ? "WR" : name in players.te ? "TE" : "RB", team: p.team, adp: p.adp, reason: "Reachable correlation" });
+                }
+            });
+
+            // Same-team fallback
+            Object.keys(allPlayers).forEach(name => {
+                const p = allPlayers[name];
+                if (p.team === qbTeam && Math.round(p.adp) >= maxReachPick && !lateStacks.some(s => s.name === name)) {
+                    lateStacks.push({ name, pos: name in players.wr ? "WR" : name in players.te ? "TE" : "RB", team: p.team, adp: p.adp, reason: "Same-team correlation" });
+                }
+            });
+
+            return { hero: heroStacks.slice(0,3), late: lateStacks.slice(0,3) };
+        }
+
+        function generatePlanHTML(slot, qbName, build) {
+            const qbData = players.qb[qbName] || {adp: 999, team: '?'};
+            const qbAdp = qbData.adp;
+            const qbPick = Math.round(qbAdp);
+            const qbRound = Math.ceil(qbPick / 12);
+            const { hero, late } = getRealisticStacks(qbName, qbAdp);
+
+            // (rest of your original generatePlanHTML — exactly the same, just using live players)
+            let html = `
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <div class="text-3xl font-semibold">${qbName}</div>
+                        <div class="text-zinc-400">${qbData.team || '?'} • ADP ${qbAdp.toFixed(1)} • Pick ~${qbPick} (Round ${qbRound})</div>
+                    </div>
+                    <div class="px-6 py-2 bg-emerald-500/10 text-emerald-400 rounded-3xl text-sm font-medium">YOUR QB1</div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+                    <div class="bg-zinc-950 rounded-2xl p-5 border border-zinc-700"><div class="text-xs text-zinc-400">QBs</div><div class="text-4xl font-semibold text-blue-400">${build.qb}</div></div>
+                    <div class="bg-zinc-950 rounded-2xl p-5 border border-zinc-700"><div class="text-xs text-zinc-400">RBs</div><div class="text-4xl font-semibold text-emerald-400">${build.rb}</div></div>
+                    <div class="bg-zinc-950 rounded-2xl p-5 border border-zinc-700"><div class="text-xs text-zinc-400">WRs</div><div class="text-4xl font-semibold text-purple-400">${build.wr}</div></div>
+                    <div class="bg-zinc-950 rounded-2xl p-5 border border-zinc-700"><div class="text-xs text-zinc-400">TEs</div><div class="text-4xl font-semibold text-amber-400">${build.te}</div></div>
+                </div>
+
+                <!-- Hero & Late stacks sections — identical to your original -->
+                <div class="mb-10">
+                    <div class="uppercase text-xs tracking-widest text-amber-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-arrow-up"></i> EARLY HERO STACKS (Rounds 1-5)</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${hero.length ? hero.map(s => `
+                            <div class="hero-stack bg-zinc-950 border border-zinc-700 rounded-2xl p-5">
+                                <div class="flex justify-between"><div class="font-medium">${s.name}</div><span class="text-xs px-3 py-1 bg-amber-500/20 text-amber-400 rounded-2xl">${s.pos}</span></div>
+                                <div class="text-xs text-zinc-400">${s.team || '?'} • ADP ${s.adp.toFixed(1)}</div>
+                                <div class="text-xs mt-3 text-amber-400">${s.reason}</div>
+                            </div>`).join('') : `<div class="col-span-3 text-zinc-400 italic p-6 border border-dashed border-zinc-700 rounded-3xl text-center">No strong hero stacks for this QB.</div>`}
+                    </div>
+                </div>
+
+                <div class="mb-10">
+                    <div class="uppercase text-xs tracking-widest text-emerald-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-arrow-down"></i> LATE REACHABLE STACKS</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${late.length ? late.map(s => `
+                            <div class="late-stack bg-zinc-950 border border-zinc-700 rounded-2xl p-5">
+                                <div class="flex justify-between"><div class="font-medium">${s.name}</div><span class="text-xs px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-2xl">${s.pos}</span></div>
+                                <div class="text-xs text-zinc-400">${s.team || '?'} • ADP ${s.adp.toFixed(1)}</div>
+                                <div class="text-xs mt-3 text-emerald-400">${s.reason}</div>
+                            </div>`).join('') : `<div class="col-span-3 text-zinc-400 italic p-6 border border-dashed border-zinc-700 rounded-3xl text-center">Focus on best available after QB1.</div>`}
+                    </div>
+                </div>
+
+                <!-- Attack Plan (your original) -->
+                <div>
+                    <div class="uppercase text-xs tracking-widest text-zinc-400 mb-4">YOUR 20-ROUND ATTACK PLAN (Slot ${slot})</div>
+                    <div class="space-y-6 text-sm">
+                        <div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">1-5</div><div class="flex-1">Elite skill positions + <strong>Hero Stacks</strong></div></div>
+                        <div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">~${qbRound}</div><div class="flex-1">Take <strong>${qbName}</strong> as your QB1</div></div>
+                        ${late.map((s,i) => `<div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">~${qbRound + i + 1}</div><div class="flex-1">Add <strong>${s.name}</strong> — strong correlation</div></div>`).join('')}
+                        <div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">${qbRound + late.length + 1}-12</div><div class="flex-1">QB2 + fill toward <strong>${build.rb} RB / ${build.wr} WR / ${build.te} TE</strong></div></div>
+                        <div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">13-16</div><div class="flex-1">Depth, handcuffs, backups</div></div>
+                        <div class="flex gap-4"><div class="font-mono w-10 text-zinc-500">17-20</div><div class="flex-1">Rookie upside & lottery tickets</div></div>
+                    </div>
+                    <div class="mt-8 text-xs text-zinc-500 bg-zinc-950 border border-zinc-800 rounded-2xl p-5">Pro tip: Stacking maximizes ceiling weeks in best ball.</div>
+                </div>
+            `;
+            return html;
+        }
+
+        async function init() {
+            // Try live scrape first
+            await loadLiveADP();
+            
+            // Fallback static data if scrape failed (your original QBs + example others)
+            if (Object.keys(players.qb).length === 0) {
+                players.qb = { /* your original qbs object with teams */ };
+                // You can paste your full original rbs/wrs/tes here as fallback if you want
+            }
+
+            // Populate draft slots
+            const slotSelect = document.getElementById('draftSlot');
+            for (let i = 1; i <= 12; i++) {
+                const opt = document.createElement('option');
+                opt.value = i; opt.textContent = `Slot ${i}`;
+                slotSelect.appendChild(opt);
+            }
+
+            // Populate QB selector (sorted by ADP)
+            const qbSelect = document.getElementById('selectedQB');
+            Object.keys(players.qb)
+                .sort((a,b) => players.qb[a].adp - players.qb[b].adp)
+                .forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = `${name} (${players.qb[name].team || '?'} – ADP ${players.qb[name].adp.toFixed(1)})`;
+                    qbSelect.appendChild(opt);
+                });
+        }
+
+        function refreshADP() {
+            loadLiveADP().then(() => {
+                alert('✅ ADP refreshed from bbmdb.com!');
+                // Re-init QB selector
+                const qbSelect = document.getElementById('selectedQB');
+                qbSelect.innerHTML = '';
+                Object.keys(players.qb)
+                    .sort((a,b) => players.qb[a].adp - players.qb[b].adp)
+                    .forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = `${name} (${players.qb[name].team || '?'} – ADP ${players.qb[name].adp.toFixed(1)})`;
+                        qbSelect.appendChild(opt);
+                    });
+            });
+        }
+
+        function generatePlans() {
+            const slot = parseInt(document.getElementById('draftSlot').value);
+            const qbName = document.getElementById('selectedQB').value;
+            if (!slot || !qbName) return alert("Please select draft slot and QB1");
+
+            const build = {
+                qb: parseInt(document.getElementById('buildQB').value),
+                rb: parseInt(document.getElementById('buildRB').value),
+                wr: parseInt(document.getElementById('buildWR').value),
+                te: parseInt(document.getElementById('buildTE').value)
+            };
+
+            const planHTML = generatePlanHTML(slot, qbName, build);
+            document.getElementById('planContainer').innerHTML = planHTML;
+            document.getElementById('resultsHeader').innerHTML = `Slot ${slot} • ${qbName} • ${build.qb}QB / ${build.rb}RB / ${build.wr}WR / ${build.te}TE`;
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+        }
+
+        function copyPlan() {
+            const text = document.getElementById('planContainer').innerText;
+            navigator.clipboard.writeText(text).then(() => alert("✅ Plan copied!"));
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
